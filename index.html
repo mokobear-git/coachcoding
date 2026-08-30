@@ -1,0 +1,884 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COACHコーディング集計</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
+
+  :root{
+    --bg:#f4f5f2;
+    --surface:#ffffff;
+    --surface-2:#eceee9;
+    --ink:#1d211e;
+    --muted:#6a7168;
+    --line:#daddd5;
+    --line-strong:#c3c8bd;
+    --accent:#2f5d50;
+    --accent-ink:#ffffff;
+    --accent-soft:#e4ede9;
+    --good:#2f6d3f;
+    --good-soft:#e5f0e3;
+    --bad:#a13d2e;
+    --bad-soft:#f6e6e1;
+
+    --c-ho:#33587f;      --c-ho-soft:#e4eaf1;
+    --c-desc:#3f7a54;    --c-desc-soft:#e5f0e6;
+    --c-lp:#a86a2d;      --c-lp-soft:#f3e7d6;
+    --c-up:#9c8321;      --c-up-soft:#f2eed3;
+    --c-pride:#6a5490;   --c-pride-soft:#eae5f2;
+    --c-cmd:#33587f;     --c-cmd-soft:#e4eaf1;
+    --c-ce:#a13d2e;      --c-ce-soft:#f3ddd6;
+    --c-mo:#7a6a4a;      --c-mo-soft:#eee8db;
+
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#151815;
+      --surface:#1c201c;
+      --surface-2:#232720;
+      --ink:#eceee7;
+      --muted:#98a092;
+      --line:#333a31;
+      --line-strong:#454e42;
+      --accent:#6fa694;
+      --accent-ink:#0d1512;
+      --accent-soft:#20302b;
+      --good:#7bc389;
+      --good-soft:#1c3122;
+      --bad:#e08674;
+      --bad-soft:#3a231e;
+
+      --c-ho:#8fb2d6;      --c-ho-soft:#22303f;
+      --c-desc:#8fc9a1;    --c-desc-soft:#1f3327;
+      --c-lp:#dba86a;      --c-lp-soft:#3a2e1c;
+      --c-up:#d3bd5c;      --c-up-soft:#37311b;
+      --c-pride:#b2a1d6;   --c-pride-soft:#2c2740;
+      --c-cmd:#8fb2d6;     --c-cmd-soft:#22303f;
+      --c-ce:#e0917f;      --c-ce-soft:#3a241e;
+      --c-mo:#c9b98f;      --c-mo-soft:#332e21;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#151815;
+    --surface:#1c201c;
+    --surface-2:#232720;
+    --ink:#eceee7;
+    --muted:#98a092;
+    --line:#333a31;
+    --line-strong:#454e42;
+    --accent:#6fa694;
+    --accent-ink:#0d1512;
+    --accent-soft:#20302b;
+    --good:#7bc389;
+    --good-soft:#1c3122;
+    --bad:#e08674;
+    --bad-soft:#3a231e;
+
+    --c-ho:#8fb2d6;      --c-ho-soft:#22303f;
+    --c-desc:#8fc9a1;    --c-desc-soft:#1f3327;
+    --c-lp:#dba86a;      --c-lp-soft:#3a2e1c;
+    --c-up:#d3bd5c;      --c-up-soft:#37311b;
+    --c-pride:#b2a1d6;   --c-pride-soft:#2c2740;
+    --c-cmd:#8fb2d6;     --c-cmd-soft:#22303f;
+    --c-ce:#e0917f;      --c-ce-soft:#3a241e;
+    --c-mo:#c9b98f;      --c-mo-soft:#332e21;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans JP","IBM Plex Sans",-apple-system,BlinkMacSystemFont,sans-serif;
+    line-height:1.4;
+    padding:0 0 40px;
+  }
+  .wrap{max-width:176mm;margin:0 auto;padding:0 14px;}
+
+  h1,h2,h3{text-wrap:balance;}
+
+  /* ---------- Header ---------- */
+  header.top{
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+  }
+  .title-row{
+    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+    padding:10px 0 8px;
+  }
+  .title-row h1{
+    font-size:16px;font-weight:700;margin:0;letter-spacing:.01em;
+  }
+  .title-row .sub{
+    color:var(--muted);font-size:11px;
+  }
+  .meta-row{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+    padding-bottom:8px;
+  }
+  .meta-field{display:flex;flex-direction:column;gap:1px;}
+  .meta-field label{font-size:9.5px;color:var(--muted);letter-spacing:.02em;}
+  .meta-field input{
+    font:inherit;font-size:11px;padding:3px 6px;border:1px solid var(--line);
+    border-radius:5px;background:var(--surface-2);color:var(--ink);
+  }
+  .meta-field input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+  /* ---------- Summary bar ---------- */
+  .summary{
+    position:sticky;top:0;z-index:20;
+    background:var(--accent);color:var(--accent-ink);
+    box-shadow:0 1px 0 var(--line-strong);
+  }
+  .summary-inner{
+    max-width:176mm;margin:0 auto;padding:6px 14px;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .summary-item{display:flex;flex-direction:row;align-items:baseline;gap:5px;min-width:0;}
+  .summary-item .num{
+    font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:15px;
+    font-variant-numeric:tabular-nums;line-height:1;
+  }
+  .summary-item .lbl{font-size:9.5px;opacity:.85;letter-spacing:.01em;white-space:nowrap;}
+  .summary-spacer{flex:1;}
+  .reset-btn{
+    background:transparent;border:1px solid color-mix(in srgb, var(--accent-ink) 45%, transparent);
+    color:var(--accent-ink);border-radius:6px;padding:4px 10px;font:inherit;font-size:11px;
+    cursor:pointer;font-weight:600;
+  }
+  .reset-btn:hover{background:color-mix(in srgb, var(--accent-ink) 12%, transparent);}
+  .reset-btn.armed{
+    background:var(--bad);border-color:var(--bad);color:#fff;
+  }
+  .reset-btn:focus-visible, button:focus-visible, input:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+
+  /* ---------- Sections ---------- */
+  main{padding-top:10px;display:flex;flex-direction:column;gap:10px;}
+
+  .tally-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    align-items:start;
+  }
+  @media (max-width:560px){ .tally-grid{ grid-template-columns:1fr; } }
+  .col{
+    display:flex;flex-direction:column;gap:8px;
+    min-width:0;
+  }
+
+  .section{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .section-head{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:5px 9px;
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+    row-gap:2px;
+  }
+  .section-head h2{
+    font-size:11.5px;margin:0;font-weight:700;letter-spacing:0;
+    display:flex;align-items:baseline;gap:5px;
+    white-space:nowrap;
+  }
+  .section-head h2 .en{font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;opacity:.75;}
+  .section-totals{
+    display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;
+  }
+  .section-total{
+    font-size:9.5px;color:var(--muted);white-space:nowrap;
+  }
+  .section-total b{
+    font-family:"IBM Plex Mono",monospace;color:var(--ink);font-size:10.5px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .section-body{padding:7px 8px 8px;}
+  .subgroup-label{
+    font-size:9px;color:var(--muted);letter-spacing:.02em;margin:0 0 4px;
+  }
+  .subgroup-label:not(:first-child){margin-top:6px;}
+  .tiles{
+    display:flex;flex-direction:column;gap:4px;
+  }
+  .tile-row{
+    display:flex;flex-wrap:nowrap;gap:4px;
+  }
+  /* every tile shares its row evenly and shrinks together, wrapping its
+     description instead of forcing the row onto a second line */
+  .tile-row > .tile{
+    flex:1 1 0;
+    min-width:0;
+  }
+
+  /* ---------- Tile ---------- */
+  .tile{
+    display:flex;flex-direction:column;
+    border:1px solid var(--line);
+    border-radius:6px;
+    overflow:hidden;
+    background:var(--surface);
+  }
+  .tile-main{
+    font:inherit;text-align:left;border:0;cursor:pointer;
+    padding:3px 6px 2px;
+    display:flex;flex-direction:column;gap:0;
+    background:var(--tile-soft);
+    color:var(--ink);
+  }
+  .tile-main .code{
+    font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:10.5px;
+    color:var(--tile-strong);line-height:1.25;
+  }
+  .tile-main .desc{font-size:8px;color:var(--muted);white-space:normal;line-height:1.15;}
+  .tile-main:hover{filter:brightness(0.97);}
+  :root[data-theme="dark"] .tile-main:hover,
+  :root:not([data-theme="light"]) .tile-main:hover{filter:brightness(1.15);}
+  .tile-main:active{filter:brightness(0.92);}
+
+  .tile-controls{
+    display:flex;align-items:stretch;
+    border-top:1px solid var(--line);
+    margin-top:auto;
+  }
+  .step{
+    font:inherit;border:0;background:var(--surface-2);color:var(--ink);
+    width:18px;cursor:pointer;font-size:11px;font-weight:600;line-height:1;
+  }
+  .step:hover{background:var(--line);}
+  .count{
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:11px;
+    text-align:center;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);
+    width:26px;background:var(--surface);color:var(--ink);
+    font-variant-numeric:tabular-nums;
+    -moz-appearance:textfield;
+  }
+  .count::-webkit-outer-spin-button,.count::-webkit-inner-spin-button{
+    -webkit-appearance:none;margin:0;
+  }
+
+  /* per-group tile colors */
+  .tile[data-group="ho"]{--tile-soft:var(--c-ho-soft);--tile-strong:var(--c-ho);}
+  .tile[data-group="desc"]{--tile-soft:var(--c-desc-soft);--tile-strong:var(--c-desc);}
+  .tile[data-group="lp"]{--tile-soft:var(--c-lp-soft);--tile-strong:var(--c-lp);}
+  .tile[data-group="up"]{--tile-soft:var(--c-up-soft);--tile-strong:var(--c-up);}
+  .tile[data-group="pride"]{--tile-soft:var(--c-pride-soft);--tile-strong:var(--c-pride);}
+  .tile[data-group="cmd"]{--tile-soft:var(--c-cmd-soft);--tile-strong:var(--c-cmd);}
+  .tile[data-group="ce"]{--tile-soft:var(--c-ce-soft);--tile-strong:var(--c-ce);}
+  .tile[data-group="mo"]{--tile-soft:var(--c-mo-soft);--tile-strong:var(--c-mo);}
+
+  .section[data-accent="ho"] .section-head{background:var(--c-ho-soft);}
+  .section[data-accent="desc"] .section-head{background:var(--c-desc-soft);}
+  .section[data-accent="lp"] .section-head{background:var(--c-lp-soft);}
+  .section[data-accent="up"] .section-head{background:var(--c-up-soft);}
+  .section[data-accent="pride"] .section-head{background:var(--c-pride-soft);}
+  .section[data-accent="cmd"] .section-head{background:var(--c-cmd-soft);}
+  .section[data-accent="ce"] .section-head{background:var(--c-ce-soft);}
+  .section[data-accent="mo"] .section-head{background:var(--c-mo-soft);}
+
+  /* ---------- Criteria section ---------- */
+  .criteria-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  }
+  @media (max-width:640px){.criteria-grid{grid-template-columns:1fr;}}
+  table.crit{width:100%;border-collapse:collapse;font-size:11.5px;}
+  table.crit th{
+    text-align:left;font-size:10px;color:var(--muted);font-weight:600;
+    padding:3px 5px;border-bottom:1px solid var(--line);
+  }
+  table.crit td{padding:4px 5px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.crit tr:last-child td{border-bottom:0;}
+  .pill{
+    display:inline-flex;align-items:center;gap:5px;padding:1px 8px;border-radius:99px;
+    font-size:10.5px;font-weight:600;white-space:nowrap;
+  }
+  .pill.pass{background:var(--good-soft);color:var(--good);}
+  .pill.fail{background:var(--bad-soft);color:var(--bad);}
+  .crit-val{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+
+  .mastery-box{
+    margin-top:12px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    background:var(--surface-2);
+  }
+  .mastery-box .label{font-size:12px;font-weight:600;}
+  .note{font-size:10.5px;color:var(--muted);margin-top:8px;}
+
+  .scale-row{display:flex;gap:18px;flex-wrap:nowrap;margin-top:10px;}
+  .scale-field{display:flex;flex-direction:column;gap:3px;flex:1 1 0;min-width:0;}
+  .scale-field label{font-size:11px;color:var(--muted);}
+  .scale-field select{
+    font:inherit;font-size:12px;padding:4px 7px;border:1px solid var(--line);
+    border-radius:6px;background:var(--surface);color:var(--ink);
+  }
+
+  footer.foot{
+    max-width:176mm;margin:14px auto 0;padding:0 14px;
+    font-size:10.5px;color:var(--muted);
+  }
+
+  /* ---------- Phone: same layout, larger touch targets ---------- */
+  @media (max-width:560px){
+    .meta-row{ grid-template-columns:repeat(2,1fr); gap:8px; }
+    .meta-field label{ font-size:11px; }
+    .meta-field input{ font-size:14px; padding:7px 8px; }
+
+    .summary-item .num{ font-size:17px; }
+    .summary-item .lbl{ font-size:10.5px; }
+    .reset-btn{ padding:7px 12px; font-size:12.5px; }
+
+    .section-head{ padding:8px 10px; }
+    .section-head h2{ font-size:13px; white-space:normal; }
+    .section-total{ font-size:10.5px; }
+    .section-total b{ font-size:12px; }
+    .section-body{ padding:9px 10px 10px; }
+    .subgroup-label{ font-size:10px; }
+
+    .tiles{ gap:7px; }
+    .tile-row{ gap:6px; }
+
+    .tile-main{ padding:7px 9px 6px; }
+    .tile-main .code{ font-size:13.5px; }
+    .tile-main .desc{ font-size:10.5px; }
+
+    .step{ width:34px; font-size:17px; }
+    .count{ width:38px; font-size:15px; }
+
+    table.crit{ font-size:12.5px; }
+    table.crit th{ font-size:10.5px; }
+    .pill{ font-size:11.5px; padding:3px 9px; }
+    .crit-val{ font-size:11px; }
+    .mastery-box .label{ font-size:13px; }
+    .scale-field label{ font-size:11.5px; }
+    .scale-field select{ font-size:14px; padding:6px 8px; }
+  }
+
+  @media print{
+    @page{ size: B5; margin: 8mm; }
+    body{ padding:0; background:#fff; }
+    .summary{ position:static; }
+    .reset-btn{ display:none; }
+  }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="title-row">
+      <h1>COACHコーディング集計</h1>
+      <span class="sub">CDIコーチングの観察的アセスメント — 集計用ワークシート</span>
+    </div>
+    <div class="meta-row">
+      <div class="meta-field"><label for="m-date">日付</label><input id="m-date" type="date"></div>
+      <div class="meta-field"><label for="m-session">PCITセッション</label><input id="m-session" type="text" placeholder="例: 3"></div>
+      <div class="meta-field"><label for="m-trainee">トレーニー</label><input id="m-trainee" type="text"></div>
+      <div class="meta-field"><label for="m-rater">評定者</label><input id="m-rater" type="text"></div>
+    </div>
+  </div>
+</header>
+
+<div class="summary">
+  <div class="summary-inner">
+    <div class="summary-item"><span class="num" id="sum-total">0</span><span class="lbl">コーチング発言の合計</span></div>
+    <div class="summary-item"><span class="num" id="sum-ce">0</span><span class="lbl">合計 CE</span></div>
+    <div class="summary-item"><span class="num" id="sum-lpup">0</span><span class="lbl">合計 LP+UP</span></div>
+    <div class="summary-item"><span class="num" id="sum-mo">0</span><span class="lbl">合計 機会を落とす</span></div>
+    <div class="summary-spacer"></div>
+    <button class="reset-btn" id="reset-btn" type="button">すべて0に戻す</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+<div class="tally-grid">
+
+  <div class="col">
+    <section class="section" data-accent="pride">
+      <div class="section-head">
+        <h2>プロンプティング・ラインフィード・建設的フィードバック <span class="en">PS / LF / CF</span></h2>
+        <div class="section-totals">
+          <div class="section-total">合計: <b id="tot-pride">0</b></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <p class="subgroup-label">右＝親が従った回数（内数・合計には含めない）</p>
+        <div class="tiles" data-fill="pride"></div>
+      </div>
+    </section>
+
+    <section class="section" data-accent="cmd">
+      <div class="section-head">
+        <h2>命令 <span class="en">DC / IC</span></h2>
+        <div class="section-totals">
+          <div class="section-total">合計: <b id="tot-cmd">0</b></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="tiles" data-fill="cmd"></div>
+      </div>
+    </section>
+
+    <section class="section" data-accent="ce">
+      <div class="section-head">
+        <h2>コーチングエラー <span class="en">CE</span></h2>
+        <div class="section-totals">
+          <div class="section-total">合計CE: <b id="tot-ce">0</b></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="tiles" data-fill="ce"></div>
+      </div>
+    </section>
+
+    <section class="section" data-accent="mo">
+      <div class="section-head">
+        <h2>機会を落とす <span class="en">MO</span></h2>
+        <div class="section-totals">
+          <div class="section-total">自発的の内: <b id="tot-mo-s">0</b></div>
+          <div class="section-total">随伴的の内: <b id="tot-mo-c">0</b></div>
+          <div class="section-total">合計MO: <b id="tot-mo">0</b></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <p class="subgroup-label">自発的LP・BD・RFに続く賞賛を落とす</p>
+        <div class="tiles" data-fill="mo_s"></div>
+        <p class="subgroup-label">PS・LFに続く随伴的賞賛を落とす</p>
+        <div class="tiles" data-fill="mo_c"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="section" data-accent="ho">
+      <div class="section-head">
+        <h2>高次発言 <span class="en">HO</span></h2>
+        <div class="section-totals">
+          <div class="section-total">合計HO: <b id="tot-ho">0</b></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="tiles" data-fill="ho"></div>
+      </div>
+    </section>
+
+    <section class="section" data-accent="desc">
+      <div class="section-head">
+        <h2>説明・描写 <span class="en">DCh / DP / DS</span></h2>
+        <div class="section-totals">
+          <div class="section-total">説明の合計: <b id="tot-desc">0</b></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="tiles" data-fill="desc"></div>
+      </div>
+    </section>
+
+    <section class="section" data-accent="lp">
+      <div class="section-head">
+        <h2>親に対する具体的賞賛 <span class="en">LP</span></h2>
+        <div class="section-totals">
+          <div class="section-total">合計LP: <b id="tot-lp">0</b></div>
+          <div class="section-total">合計LP+UP: <b id="tot-lpup">0</b></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <p class="subgroup-label">左＝自発的CDIへの賞賛／右＝随伴的賞賛</p>
+        <div class="tiles" data-fill="lp"></div>
+      </div>
+    </section>
+
+    <section class="section" data-accent="up">
+      <div class="section-head">
+        <h2>一般的賞賛（CUPを含む） <span class="en">UP</span></h2>
+        <div class="section-totals">
+          <div class="section-total">合計UP: <b id="tot-up">0</b></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="tiles" data-fill="up"></div>
+      </div>
+    </section>
+  </div>
+
+</div>
+
+  <section class="section" data-accent="ho">
+    <div class="section-head">
+      <h2>基準判定（自動計算）</h2>
+    </div>
+    <div class="section-body">
+      <div class="criteria-grid">
+        <table class="crit">
+          <thead><tr><th>基準</th><th>値</th><th>判定</th></tr></thead>
+          <tbody id="crit-main"></tbody>
+        </table>
+        <table class="crit">
+          <thead><tr><th>様式的特徴（適合していたら○）</th><th>値</th><th>判定</th></tr></thead>
+          <tbody id="crit-style"></tbody>
+        </table>
+      </div>
+      <div class="mastery-box">
+        <span class="label">CDIコーチングマスタリーに適合する</span>
+        <span class="pill" id="mastery-pill">—</span>
+      </div>
+      <div class="scale-row">
+        <div class="scale-field">
+          <label for="s-goal">コーチングゴールに対するアドヒアランススコア（1低〜4高）</label>
+          <select id="s-goal"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        </div>
+        <div class="scale-field">
+          <label for="s-enthu">コーチの熱心さ／マッチングスコア（1低〜4高）</label>
+          <select id="s-enthu"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        </div>
+      </div>
+      <p class="note">※ 基準判定は入力された数値からの自動参考計算です。臨床判断としての最終確認は評定者が行ってください。</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">記録はこの端末のブラウザにのみ保存されます（他の端末やユーザーとは共有されません）。</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var ITEMS = [
+    {key:"HO", code:"HO", desc:"高次発言", group:"ho"},
+
+    {key:"DCh", code:"DCh", desc:"子ども", group:"desc"},
+    {key:"DP", code:"DP", desc:"親", group:"desc"},
+    {key:"DS", code:"DS", desc:"スキル/おもちゃ/状況", group:"desc"},
+
+    {key:"LP_LP", code:"LP-LP", desc:"LP・自発的", group:"lp"},
+    {key:"CLP_LP", code:"CLP-LP", desc:"LP・随伴的", group:"lp"},
+    {key:"LP_BD", code:"LP-BD", desc:"BD・自発的", group:"lp"},
+    {key:"CLP_BD", code:"CLP-BD", desc:"BD・随伴的", group:"lp"},
+    {key:"LP_RF", code:"LP-RF", desc:"RF・自発的", group:"lp"},
+    {key:"CLP_RF", code:"CLP-RF", desc:"RF・随伴的", group:"lp"},
+    {key:"LP_O", code:"LP-O", desc:"その他・自発的", group:"lp"},
+    {key:"CLP_O", code:"CLP-O", desc:"その他・随伴的", group:"lp"},
+
+    {key:"UP", code:"UP", desc:"一般的賞賛", group:"up"},
+    {key:"CUP", code:"CUP", desc:"随伴的一般賞賛", group:"up"},
+
+    {key:"PS", code:"PS", desc:"プロンプティング", group:"pride"},
+    {key:"PS_CO", code:"PS-CO", desc:"PSに親が従った", group:"pride_co"},
+    {key:"LF", code:"LF", desc:"ラインフィード", group:"pride"},
+    {key:"LF_CO", code:"LF-CO", desc:"LFに親が従った", group:"pride_co"},
+    {key:"CF", code:"CF", desc:"建設的フィードバック", group:"pride"},
+
+    {key:"DC", code:"DC", desc:"直接的命令", group:"cmd"},
+    {key:"IC", code:"IC", desc:"間接的命令", group:"cmd"},
+
+    {key:"CE1", code:"CE1", desc:"親のPRIDEスキルのミスラベル", group:"ce"},
+    {key:"CE2", code:"CE2", desc:"不適切な提案", group:"ce"},
+    {key:"CE3", code:"CE3", desc:"批判あるいは的外れな指摘", group:"ce"},
+
+    {key:"MO_LP", code:"MO-LP", desc:"LPを落とす", group:"mo_s"},
+    {key:"MO_BD", code:"MO-BD", desc:"BDを落とす", group:"mo_s"},
+    {key:"MO_RF", code:"MO-RF", desc:"RFを落とす", group:"mo_s"},
+    {key:"MO_PS", code:"MO-PS", desc:"PSを落とす", group:"mo_c"},
+    {key:"MO_LF", code:"MO-LF", desc:"LFを落とす", group:"mo_c"}
+  ];
+
+  // tile visual group differs from logical subgroup in a couple of spots
+  var TILE_GROUP = {
+    ho:"ho", desc:"desc", lp:"lp", up:"up",
+    pride:"pride", pride_co:"pride",
+    cmd:"cmd", ce:"ce",
+    mo_s:"mo", mo_c:"mo"
+  };
+
+  var STORE_KEY = "coach-coding-counts-v1";
+  var counts = {};
+  ITEMS.forEach(function(it){ counts[it.key] = 0; });
+
+  function loadStored(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(!raw) return;
+      var saved = JSON.parse(raw);
+      ITEMS.forEach(function(it){
+        if(typeof saved[it.key] === "number" && isFinite(saved[it.key])){
+          counts[it.key] = Math.max(0, Math.round(saved[it.key]));
+        }
+      });
+    }catch(e){ /* storage unavailable — start from zero */ }
+  }
+  function saveStored(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(counts)); }catch(e){ /* ignore */ }
+  }
+  loadStored();
+
+  // ---- build tiles ----
+  var fillTargets = {};
+  Array.prototype.forEach.call(document.querySelectorAll("[data-fill]"), function(el){
+    fillTargets[el.getAttribute("data-fill")] = el;
+  });
+
+  var itemsByKey = {};
+  ITEMS.forEach(function(it){ itemsByKey[it.key] = it; });
+
+  var inputs = {};
+
+  function buildTile(it){
+    var tile = document.createElement("div");
+    tile.className = "tile";
+    tile.setAttribute("data-group", TILE_GROUP[it.group] || it.group);
+
+    var main = document.createElement("button");
+    main.type = "button";
+    main.className = "tile-main";
+    main.setAttribute("aria-label", it.code + "（" + it.desc + "）を1増やす");
+    main.innerHTML = '<span class="code">' + it.code + '</span><span class="desc">' + it.desc + '</span>';
+    main.addEventListener("click", function(){ setCount(it.key, counts[it.key] + 1); });
+
+    var controls = document.createElement("div");
+    controls.className = "tile-controls";
+
+    var minus = document.createElement("button");
+    minus.type = "button"; minus.className = "step"; minus.textContent = "−";
+    minus.setAttribute("aria-label", it.code + "を1減らす");
+    minus.addEventListener("click", function(){ setCount(it.key, counts[it.key] - 1); });
+
+    var input = document.createElement("input");
+    input.type = "number"; input.className = "count"; input.min = "0"; input.step = "1";
+    input.value = counts[it.key];
+    input.inputMode = "numeric";
+    input.setAttribute("aria-label", it.code + "の値");
+    input.addEventListener("change", function(){
+      var v = parseInt(input.value, 10);
+      setCount(it.key, isNaN(v) ? 0 : v);
+    });
+
+    var plus = document.createElement("button");
+    plus.type = "button"; plus.className = "step"; plus.textContent = "＋";
+    plus.setAttribute("aria-label", it.code + "を1増やす");
+    plus.addEventListener("click", function(){ setCount(it.key, counts[it.key] + 1); });
+
+    controls.appendChild(minus);
+    controls.appendChild(input);
+    controls.appendChild(plus);
+    tile.appendChild(main);
+    tile.appendChild(controls);
+
+    inputs[it.key] = input;
+    return tile;
+  }
+
+  // Every section is laid out as an explicit stack of rows, each holding
+  // exactly the tiles that belong together — never a free-flowing wrap.
+  // Two exceptions keep 3 tiles on a single row: CE1/CE2/CE3 and the
+  // spontaneous MO-LP/MO-BD/MO-RF row; every other row holds at most 2.
+  var ROWS = {
+    ho:   [["HO"]],
+    desc: [["DCh","DP"], ["DS"]],
+    lp:   [["LP_LP","CLP_LP"], ["LP_BD","CLP_BD"], ["LP_RF","CLP_RF"], ["LP_O","CLP_O"]],
+    up:   [["UP","CUP"]],
+    pride:[["PS","PS_CO"], ["LF","LF_CO"], ["CF"]],
+    cmd:  [["DC","IC"]],
+    ce:   [["CE1","CE2","CE3"]],
+    mo_s: [["MO_LP","MO_BD","MO_RF"]],
+    mo_c: [["MO_PS","MO_LF"]]
+  };
+
+  Object.keys(fillTargets).forEach(function(fillKey){
+    var host = fillTargets[fillKey];
+    var rows = ROWS[fillKey] || [];
+    rows.forEach(function(rowKeys){
+      var row = document.createElement("div");
+      row.className = "tile-row";
+      rowKeys.forEach(function(key){
+        row.appendChild(buildTile(itemsByKey[key]));
+      });
+      host.appendChild(row);
+    });
+  });
+
+  function setCount(key, val){
+    if(val < 0) val = 0;
+    val = Math.round(val);
+    counts[key] = val;
+    inputs[key].value = val;
+    saveStored();
+    recompute();
+  }
+
+  function g(key){ return counts[key] || 0; }
+
+  var crit1Row, crit2Row; // unused placeholders removed below
+
+  function recompute(){
+    var ho = g("HO");
+    var descTotal = g("DCh") + g("DP") + g("DS");
+
+    var lpSpontSpecific = g("LP_LP") + g("LP_BD") + g("LP_RF"); // excludes その他, used in style-feature #6
+    var lpOther = g("LP_O") + g("CLP_O");
+    var lpTotal = g("LP_LP") + g("CLP_LP") + g("LP_BD") + g("CLP_BD") + g("LP_RF") + g("CLP_RF") + g("LP_O") + g("CLP_O");
+    var lpContingent = g("CLP_LP") + g("CLP_BD") + g("CLP_RF");
+
+    var upTotal = g("UP") + g("CUP");
+    var lpUpTotal = lpTotal + upTotal;
+
+    var prideTotal = g("PS") + g("LF") + g("CF");
+    var cmdTotal = g("DC") + g("IC");
+
+    var ceTotal = g("CE1") + g("CE2") + g("CE3");
+
+    var moSpont = g("MO_LP") + g("MO_BD") + g("MO_RF");
+    var moCont = g("MO_PS") + g("MO_LF");
+    var moTotal = moSpont + moCont;
+
+    var grandTotal = ho + descTotal + lpUpTotal + prideTotal + cmdTotal;
+
+    // section totals
+    setText("tot-ho", ho);
+    setText("tot-desc", descTotal);
+    setText("tot-lp", lpTotal);
+    setText("tot-lpup", lpUpTotal);
+    setText("tot-up", upTotal);
+    setText("tot-pride", prideTotal);
+    setText("tot-cmd", cmdTotal);
+    setText("tot-ce", ceTotal);
+    setText("tot-mo-s", moSpont);
+    setText("tot-mo-c", moCont);
+    setText("tot-mo", moTotal);
+
+    setText("sum-total", grandTotal);
+    setText("sum-ce", ceTotal);
+    setText("sum-lpup", lpUpTotal);
+    setText("sum-mo", moTotal);
+
+    // ---- style features (7) ----
+    var styleDefs = [
+      {label:"1. HO ≥ 3（≥1 CDI-1）", val: ho, ok: ho >= 3, show: ho + " 件"},
+      {label:"2. DCh, DP, DS ≥ 5", val: descTotal, ok: descTotal >= 5, show: descTotal + " 件"},
+      {label:"3. その他の賞賛（LP-O+CLP-O）≥ 2", val: lpOther, ok: lpOther >= 2, show: lpOther + " 件"},
+      {label:"4. LF ≤ コーチング発言合計の1/4", val: g("LF"), ok: g("LF") <= grandTotal/4, show: g("LF") + " ≤ " + (grandTotal/4).toFixed(1)},
+      {label:"5. CF < コーチング発言合計の1/10", val: g("CF"), ok: g("CF") < grandTotal/10, show: g("CF") + " < " + (grandTotal/10).toFixed(1)},
+      {label:"6. 賞賛を落とす ≤ 自発的LP,RF,BDの1/2", val: moSpont, ok: moSpont <= lpSpontSpecific/2, show: moSpont + " ≤ " + (lpSpontSpecific/2).toFixed(1)},
+      {label:"7. 随伴的賞賛 > 機会合計の1/2", val: lpContingent + g("CUP"), ok: (lpContingent + g("CUP")) > moTotal/2, show: (lpContingent + g("CUP")) + " > " + (moTotal/2).toFixed(1)}
+    ];
+    var styleCount = styleDefs.filter(function(d){ return d.ok; }).length;
+
+    var styleBody = document.getElementById("crit-style");
+    styleBody.innerHTML = "";
+    styleDefs.forEach(function(d){
+      styleBody.appendChild(critRow(d.label, d.show, d.ok));
+    });
+
+    // ---- main 5 criteria ----
+    var mainDefs = [
+      {label:"コーチング発言の合計 ≥ 30", ok: grandTotal >= 30, show: grandTotal + " / 30"},
+      {label:"コーチングエラー ≤ 3", ok: ceTotal <= 3, show: ceTotal + " / 3"},
+      {label:"賞賛（LP+UP） ≥ 10", ok: lpUpTotal >= 10, show: lpUpTotal + " / 10"},
+      {label:"具体的賞賛の割合 ≥ 1/2（50%） ※具体的賞賛÷(具体的賞賛+一般的賞賛)", ok: lpUpTotal > 0 && (lpTotal/lpUpTotal) >= 0.5, show: lpUpTotal > 0 ? (lpTotal + "/" + lpUpTotal + " (" + Math.round(lpTotal/lpUpTotal*100) + "%)") : "—"},
+      {label:"様式的特徴 ≥ 4/7", ok: styleCount >= 4, show: styleCount + " / 7"}
+    ];
+    var mainBody = document.getElementById("crit-main");
+    mainBody.innerHTML = "";
+    mainDefs.forEach(function(d){
+      mainBody.appendChild(critRow(d.label, d.show, d.ok));
+    });
+
+    var mastery = mainDefs.every(function(d){ return d.ok; });
+    var pill = document.getElementById("mastery-pill");
+    pill.textContent = mastery ? "適合" : "不適合";
+    pill.className = "pill " + (mastery ? "pass" : "fail");
+  }
+
+  function critRow(label, show, ok){
+    var tr = document.createElement("tr");
+    var tdLabel = document.createElement("td");
+    tdLabel.textContent = label;
+    var tdVal = document.createElement("td");
+    tdVal.className = "crit-val";
+    tdVal.textContent = show;
+    var tdPill = document.createElement("td");
+    var pill = document.createElement("span");
+    pill.className = "pill " + (ok ? "pass" : "fail");
+    pill.textContent = ok ? "適合" : "不適合";
+    tdPill.appendChild(pill);
+    tr.appendChild(tdLabel);
+    tr.appendChild(tdVal);
+    tr.appendChild(tdPill);
+    return tr;
+  }
+
+  function setText(id, val){
+    var el = document.getElementById(id);
+    if(el) el.textContent = val;
+  }
+
+  // Two-step confirm instead of window.confirm(): a sandboxed preview
+  // (e.g. an embedded artifact viewer) can silently block native dialogs,
+  // which made the old confirm()-gated reset appear to do nothing.
+  var resetBtn = document.getElementById("reset-btn");
+  var resetArmed = false;
+  var resetArmTimer = null;
+  var RESET_LABEL_DEFAULT = resetBtn.textContent;
+  var RESET_LABEL_CONFIRM = "もう一度押すと0に戻ります";
+
+  function disarmReset(){
+    resetArmed = false;
+    resetBtn.textContent = RESET_LABEL_DEFAULT;
+    resetBtn.classList.remove("armed");
+    if(resetArmTimer){ clearTimeout(resetArmTimer); resetArmTimer = null; }
+  }
+
+  resetBtn.addEventListener("click", function(){
+    if(!resetArmed){
+      resetArmed = true;
+      resetBtn.textContent = RESET_LABEL_CONFIRM;
+      resetBtn.classList.add("armed");
+      resetArmTimer = setTimeout(disarmReset, 4000);
+      return;
+    }
+    disarmReset();
+    ITEMS.forEach(function(it){
+      counts[it.key] = 0;
+      inputs[it.key].value = 0;
+    });
+    saveStored();
+    recompute();
+  });
+
+  // meta fields (session info) persisted alongside counts, per-browser only
+  var META_KEY = "coach-coding-meta-v1";
+  var metaIds = ["m-date","m-session","m-trainee","m-rater","s-goal","s-enthu"];
+  (function loadMeta(){
+    try{
+      var raw = localStorage.getItem(META_KEY);
+      if(!raw) return;
+      var saved = JSON.parse(raw);
+      metaIds.forEach(function(id){
+        var el = document.getElementById(id);
+        if(el && typeof saved[id] === "string") el.value = saved[id];
+      });
+    }catch(e){ /* ignore */ }
+  })();
+  function saveMeta(){
+    try{
+      var out = {};
+      metaIds.forEach(function(id){
+        var el = document.getElementById(id);
+        if(el) out[id] = el.value;
+      });
+      localStorage.setItem(META_KEY, JSON.stringify(out));
+    }catch(e){ /* ignore */ }
+  }
+  metaIds.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.addEventListener("change", saveMeta);
+  });
+
+  recompute();
+})();
+</script>
