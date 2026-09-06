@@ -719,10 +719,8 @@
     var ho = g("HO");
     var descTotal = g("DCh") + g("DP") + g("DS");
 
-    var lpSpontSpecific = g("LP_LP") + g("LP_BD") + g("LP_RF"); // excludes その他, used in style-feature #6
     var lpOther = g("LP_O") + g("CLP_O");
     var lpTotal = g("LP_LP") + g("CLP_LP") + g("LP_BD") + g("CLP_BD") + g("LP_RF") + g("CLP_RF") + g("LP_O") + g("CLP_O");
-    var lpContingent = g("CLP_LP") + g("CLP_BD") + g("CLP_RF");
 
     var upTotal = g("UP") + g("CUP");
     var lpUpTotal = lpTotal + upTotal;
@@ -735,6 +733,11 @@
     var moSpont = g("MO_LP") + g("MO_BD") + g("MO_RF");
     var moCont = g("MO_PS") + g("MO_LF");
     var moTotal = moSpont + moCont;
+
+    // 自発的LP,RF,BDの「合計」= 実際に行われた回数 + 落とした機会（分母は機会の総数）
+    var lpSpontOpportunities = g("LP_LP") + g("LP_BD") + g("LP_RF") + g("MO_LP") + g("MO_BD") + g("MO_RF");
+    // 随伴的賞賛の合計回数 = PS-CO+LF-COの合計 と MO-PS+MO-LF のどちらか多い方
+    var contingentPraiseTotal = Math.max(g("PS_CO") + g("LF_CO"), g("MO_PS") + g("MO_LF"));
 
     var grandTotal = ho + descTotal + lpUpTotal + prideTotal + cmdTotal;
 
@@ -763,8 +766,8 @@
       {label:"3. その他の賞賛（LP-O+CLP-O）≥ 2", val: lpOther, ok: lpOther >= 2, show: lpOther + " 件"},
       {label:"4. LF ≤ コーチング発言合計の1/4", val: g("LF"), ok: g("LF") <= grandTotal/4, show: g("LF") + " ≤ " + (grandTotal/4).toFixed(1)},
       {label:"5. CF < コーチング発言合計の1/10", val: g("CF"), ok: g("CF") < grandTotal/10, show: g("CF") + " < " + (grandTotal/10).toFixed(1)},
-      {label:"6. 賞賛を落とす ≤ 自発的LP,RF,BDの1/2", val: moSpont, ok: moSpont <= lpSpontSpecific/2, show: moSpont + " ≤ " + (lpSpontSpecific/2).toFixed(1)},
-      {label:"7. 随伴的賞賛 > 機会合計の1/2", val: lpContingent + g("CUP"), ok: (lpContingent + g("CUP")) > moTotal/2, show: (lpContingent + g("CUP")) + " > " + (moTotal/2).toFixed(1)}
+      {label:"6. 賞賛を落とす ≤ 自発的LP,RF,BDの1/2", val: moSpont, ok: moSpont <= lpSpontOpportunities/2, show: moSpont + " ≤ " + (lpSpontOpportunities/2).toFixed(1)},
+      {label:"7. 随伴的賞賛 > 機会合計の1/2", val: contingentPraiseTotal, ok: contingentPraiseTotal > moTotal/2, show: contingentPraiseTotal + " > " + (moTotal/2).toFixed(1)}
     ];
     var styleCount = styleDefs.filter(function(d){ return d.ok; }).length;
 
