@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>COACHコーディング集計</title>
+<title>COACHコーディング</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
 
@@ -119,11 +119,14 @@
   }
   .meta-field{display:flex;flex-direction:column;gap:1px;}
   .meta-field label{font-size:9.5px;color:var(--muted);letter-spacing:.02em;}
-  .meta-field input{
+  .meta-field input, .meta-field select{
     font:inherit;font-size:11px;padding:3px 6px;border:1px solid var(--line);
     border-radius:5px;background:var(--surface-2);color:var(--ink);
   }
-  .meta-field input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .meta-field input:focus, .meta-field select:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .session-input{display:flex;gap:2px;}
+  .session-input select{flex:1.3;min-width:0;text-align:right;text-align-last:right;}
+  .session-input input{flex:1;min-width:0;width:auto;}
 
   /* ---------- Summary bar ---------- */
   .summary{
@@ -142,12 +145,12 @@
   }
   .summary-item .lbl{font-size:9.5px;opacity:.85;letter-spacing:.01em;white-space:nowrap;}
   .summary-spacer{flex:1;}
-  .reset-btn{
+  .reset-btn, .print-btn{
     background:transparent;border:1px solid color-mix(in srgb, var(--accent-ink) 45%, transparent);
     color:var(--accent-ink);border-radius:6px;padding:4px 10px;font:inherit;font-size:11px;
     cursor:pointer;font-weight:600;
   }
-  .reset-btn:hover{background:color-mix(in srgb, var(--accent-ink) 12%, transparent);}
+  .reset-btn:hover, .print-btn:hover{background:color-mix(in srgb, var(--accent-ink) 12%, transparent);}
   .reset-btn.armed{
     background:var(--bad);border-color:var(--bad);color:#fff;
   }
@@ -328,11 +331,11 @@
   @media (max-width:560px){
     .meta-row{ grid-template-columns:repeat(2,1fr); gap:8px; }
     .meta-field label{ font-size:11px; }
-    .meta-field input{ font-size:14px; padding:7px 8px; }
+    .meta-field input, .meta-field select{ font-size:14px; padding:7px 8px; }
 
     .summary-item .num{ font-size:17px; }
     .summary-item .lbl{ font-size:10.5px; }
-    .reset-btn{ padding:7px 12px; font-size:12.5px; }
+    .reset-btn, .print-btn{ padding:7px 12px; font-size:12.5px; }
 
     .section-head{ padding:8px 10px; }
     .section-head h2{ font-size:13px; white-space:normal; }
@@ -361,22 +364,103 @@
   }
 
   @media print{
-    @page{ size: B5; margin: 8mm; }
-    body{ padding:0; background:#fff; }
+@page{ size: A4; margin: 10mm; }
+        :root{
+      --bg:#ffffff;
+      --surface:#ffffff;
+      --surface-2:#f2f2ef;
+      --ink:#111412;
+      --muted:#55594f;
+      --line:#c9cdc3;
+      --line-strong:#aab0a1;
+      --accent:#2f5d50;
+      --accent-ink:#ffffff;
+      --good:#2f6d3f;
+      --good-soft:#e5f0e3;
+      --bad:#a13d2e;
+      --bad-soft:#f6e6e1;
+      color-scheme: light;
+    }
+    body{ padding:0; background:#fff; font-size:11px; }
+    .wrap{ max-width:none; padding:0; }
+
+    /* header */
+    .title-row{ padding:4.5px 0 3.5px; gap:7px; }
+    .title-row h1{ font-size:18px; }
+    .title-row .sub{ font-size:9px; }
+    .meta-row{ gap:4.5px; padding-bottom:6.5px; }
+    .meta-field label{ font-size:7.5px; }
+    .meta-field input, .meta-field select{ font-size:10px; padding:2px 4.5px; }
+
+    /* summary bar */
     .summary{ position:static; }
-    .reset-btn{ display:none; }
+    .summary-inner{ padding:3.5px 0; gap:14.5px; }
+    .summary-item .num{ font-size:14.5px; }
+    .summary-item .lbl{ font-size:8.5px; }
+    .reset-btn, .print-btn{ display:none; }
+
+    /* section chrome */
+    main{ padding-top:6.5px; gap:6.5px; }
+    .tally-grid{ gap:6.5px; }
+    .col{ gap:6.5px; }
+    .section{ border-radius:4.5px; break-inside:avoid; }
+    .section-head{ padding:3.5px 8px; }
+    .section-head h2{ font-size:10.5px; gap:5.5px; }
+    .section-head h2 .en{ font-size:8.5px; }
+    .section-totals{ gap:8px; }
+    .section-total{ font-size:8.5px; }
+    .section-total b{ font-size:10px; }
+    .section-body{ padding:4.5px 7px 5.5px; }
+    .subgroup-label{ font-size:8px; margin-bottom:3.5px; }
+    .subgroup-label:not(:first-child){ margin-top:5.5px; }
+
+    /* tiles */
+    .tiles{ gap:3.5px; }
+    .tile-row{ gap:3.5px; }
+    .tile{ border-radius:3.5px; break-inside:avoid; }
+    .tile-main{ padding:2.5px 5.5px 2px; }
+    .tile-main .code{ font-size:9.5px; }
+    .tile-main .desc{ font-size:7.5px; line-height:1.1; }
+    .step{ display:none; }
+    .count{ border-left:0; border-right:0; width:21.5px; font-size:10px; padding:0; }
+    .tile-controls{ border-top:0; }
+
+    /* criteria */
+    .criteria-grid{ gap:11px; }
+    table.crit{ font-size:9.5px; }
+    table.crit th{ font-size:8px; padding:2px 5.5px; }
+    table.crit td{ padding:2.5px 5.5px; }
+    .pill{ font-size:8.5px; padding:1px 8px; }
+    .crit-val{ font-size:8.5px; }
+    .mastery-box{ padding:5.5px 9px; margin-top:6.5px; }
+    .mastery-box .label{ font-size:10px; }
+    .scale-row{ margin-top:6.5px; gap:14.5px; }
+    .scale-field label{ font-size:8px; }
+    .scale-field select{ font-size:10px; padding:2px 5.5px; }
+    .note{ font-size:7.5px; margin-top:6.5px; }
+
+    footer.foot{ font-size:7.5px; margin-top:6.5px; }
   }
 </style>
 
 <header class="top">
   <div class="wrap">
     <div class="title-row">
-      <h1>COACHコーディング集計</h1>
+      <h1>COACHコーディング</h1>
       <span class="sub">CDIコーチングの観察的アセスメント — 集計用ワークシート</span>
     </div>
     <div class="meta-row">
       <div class="meta-field"><label for="m-date">日付</label><input id="m-date" type="date"></div>
-      <div class="meta-field"><label for="m-session">PCITセッション</label><input id="m-session" type="text" placeholder="例: 3"></div>
+      <div class="meta-field">
+        <label for="m-session-num">PCITセッション</label>
+        <div class="session-input">
+          <select id="m-session-phase">
+            <option value="CDI-C">CDI-C</option>
+            <option value="PDI-C">PDI-C</option>
+          </select>
+          <input id="m-session-num" type="number" min="1" inputmode="numeric" placeholder="例: 3">
+        </div>
+      </div>
       <div class="meta-field"><label for="m-trainee">トレーニー</label><input id="m-trainee" type="text"></div>
       <div class="meta-field"><label for="m-rater">評定者</label><input id="m-rater" type="text"></div>
     </div>
@@ -390,6 +474,7 @@
     <div class="summary-item"><span class="num" id="sum-lpup">0</span><span class="lbl">合計 LP+UP</span></div>
     <div class="summary-item"><span class="num" id="sum-mo">0</span><span class="lbl">合計 機会を落とす</span></div>
     <div class="summary-spacer"></div>
+    <button class="print-btn" id="print-btn" type="button">PDFに出力</button>
     <button class="reset-btn" id="reset-btn" type="button">すべて0に戻す</button>
   </div>
 </div>
@@ -543,7 +628,7 @@
 
 </main>
 
-<footer class="foot">記録はこの端末のブラウザにのみ保存されます（他の端末やユーザーとは共有されません）。</footer>
+<footer class="foot">記録はこの端末のブラウザにのみ保存されます（他の端末やユーザーとは共有されません）。「PDFに出力」は印刷ダイアログを開きます。送信先を「PDFに保存」にして保存してください。</footer>
 
 <script>
 (function(){
@@ -713,8 +798,6 @@
 
   function g(key){ return counts[key] || 0; }
 
-  var crit1Row, crit2Row; // unused placeholders removed below
-
   function recompute(){
     var ho = g("HO");
     var descTotal = g("DCh") + g("DP") + g("DS");
@@ -853,9 +936,17 @@
     recompute();
   });
 
+  // PDF export: drive the browser's own print dialog (choose "Save as PDF"
+  // as the destination there). Works even where window.confirm is blocked,
+  // since print() is a normal, non-modal-dialog browser API.
+  var printBtn = document.getElementById("print-btn");
+  printBtn.addEventListener("click", function(){
+    window.print();
+  });
+
   // meta fields (session info) persisted alongside counts, per-browser only
   var META_KEY = "coach-coding-meta-v1";
-  var metaIds = ["m-date","m-session","m-trainee","m-rater","s-goal","s-enthu"];
+  var metaIds = ["m-date","m-session-phase","m-session-num","m-trainee","m-rater","s-goal","s-enthu"];
   (function loadMeta(){
     try{
       var raw = localStorage.getItem(META_KEY);
