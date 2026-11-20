@@ -154,6 +154,16 @@
   .reset-btn.armed{
     background:var(--bad);border-color:var(--bad);color:#fff;
   }
+  .ios-hint{
+    max-width:176mm;margin:0 auto;padding:0 14px 8px;
+    display:flex;align-items:flex-start;gap:8px;
+    font-size:10.5px;line-height:1.4;
+  }
+  .ios-hint button{
+    flex:0 0 auto;background:transparent;border:0;color:inherit;
+    font-size:14px;line-height:1;cursor:pointer;padding:0 2px;opacity:.85;
+  }
+  .ios-hint button:hover{opacity:1;}
   .reset-btn:focus-visible, button:focus-visible, input:focus-visible{
     outline:2px solid var(--accent);outline-offset:2px;
   }
@@ -336,6 +346,7 @@
     .summary-item .num{ font-size:17px; }
     .summary-item .lbl{ font-size:10.5px; }
     .reset-btn, .print-btn{ padding:7px 12px; font-size:12.5px; }
+    .ios-hint{ font-size:12px; }
 
     .section-head{ padding:8px 10px; }
     .section-head h2{ font-size:13px; white-space:normal; }
@@ -398,6 +409,7 @@
     .summary-item .num{ font-size:14.5px; }
     .summary-item .lbl{ font-size:8.5px; }
     .reset-btn, .print-btn{ display:none; }
+    .ios-hint{ display:none; }
 
     /* section chrome */
     main{ padding-top:6.5px; gap:6.5px; }
@@ -476,6 +488,10 @@
     <div class="summary-spacer"></div>
     <button class="print-btn" id="print-btn" type="button">PDFに出力</button>
     <button class="reset-btn" id="reset-btn" type="button">すべて0に戻す</button>
+  </div>
+  <div class="ios-hint" id="ios-hint" hidden>
+    iPhone/iPadでは、開いたプレビュー画像を指で広げて（ピンチして）全体表示にし、右上の共有ボタンから「ファイルに保存」を選ぶとPDFとして保存できます。
+    <button type="button" id="ios-hint-close" aria-label="閉じる">×</button>
   </div>
 </div>
 
@@ -628,7 +644,7 @@
 
 </main>
 
-<footer class="foot">記録はこの端末のブラウザにのみ保存されます（他の端末やユーザーとは共有されません）。「PDFに出力」は印刷ダイアログを開きます。送信先を「PDFに保存」にして保存してください。</footer>
+<footer class="foot">記録はこの端末のブラウザにのみ保存されます（他の端末やユーザーとは共有されません）。「PDFに出力」は印刷画面を開きます。パソコン・Androidでは送信先（プリンター）を「PDFに保存」にして保存してください。iPhone/iPadではプレビュー画像をピンチして全体表示にし、共有ボタンから「ファイルに保存」を選ぶとPDFになります。</footer>
 
 <script>
 (function(){
@@ -936,13 +952,27 @@
     recompute();
   });
 
-  // PDF export: drive the browser's own print dialog (choose "Save as PDF"
-  // as the destination there). Works even where window.confirm is blocked,
-  // since print() is a normal, non-modal-dialog browser API.
+  // PDF export: drive the browser's own print dialog. Works even where
+  // window.confirm is blocked, since print() is a normal, non-modal browser
+  // API. On iOS (Safari and every other iOS browser, since all of them use
+  // WebKit's print engine) there is no "Save as PDF" destination picker like
+  // on desktop/Android — saving to PDF instead needs the preview pinched
+  // open full-screen, then the share icon's "Save to Files". That's not
+  // obvious, so show a one-time inline reminder there instead of assuming
+  // the footer note gets read.
   var printBtn = document.getElementById("print-btn");
+  var iosHint = document.getElementById("ios-hint");
+  var iosHintClose = document.getElementById("ios-hint-close");
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); // iPadOS "desktop" UA
+
   printBtn.addEventListener("click", function(){
+    if(isIOS && iosHint){ iosHint.hidden = false; }
     window.print();
   });
+  if(iosHintClose){
+    iosHintClose.addEventListener("click", function(){ iosHint.hidden = true; });
+  }
 
   // meta fields (session info) persisted alongside counts, per-browser only
   var META_KEY = "coach-coding-meta-v1";
