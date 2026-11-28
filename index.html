@@ -373,6 +373,10 @@
     font-size:10.5px;color:var(--muted);
   }
 
+  /* Printed sheet: replica of the original paper COACH form.
+     Hidden on screen; swapped in for the tile layout under @media print. */
+  .print-sheet{ display:none; }
+
   /* ---------- Phone: same layout, larger touch targets ---------- */
   @media (max-width:560px){
     .timer{ width:100%; margin-left:0; }
@@ -416,6 +420,15 @@
 
   @media print{
 @page{ size: A4; margin: 10mm; }
+    /* Chrome/Edge/Firefox all skip background colors when printing unless
+       the user checks "背景のグラフィック/Background graphics" in the print
+       dialog. This forces backgrounds (header bars, shaded totals) to print
+       regardless of that setting. */
+    *{
+      -webkit-print-color-adjust:exact !important;
+      print-color-adjust:exact !important;
+      color-adjust:exact !important;
+    }
         :root{
       --bg:#ffffff;
       --surface:#ffffff;
@@ -493,6 +506,66 @@
     .note{ font-size:7.5px; margin-top:6.5px; }
 
     footer.foot{ font-size:7.5px; margin-top:6.5px; }
+
+    /* ---------- Printed sheet (paper-form replica) ---------- */
+    header.top{ display:none !important; }
+    .summary{ display:none !important; }
+    .tally-grid{ display:none !important; }
+    #onscreen-criteria{ display:none !important; }
+    footer.foot{ display:none !important; }
+
+    .print-sheet{
+      display:block;
+      color:#000;
+    }
+    .ps-title{
+      text-align:center;font-size:15.5px;font-weight:700;margin:1px 0 5px;
+    }
+    .ps-meta{
+      display:flex;flex-wrap:wrap;gap:13px;justify-content:space-between;
+      font-size:9.5px;border-bottom:1px solid #000;padding-bottom:3.5px;margin-bottom:6px;
+    }
+    .ps-meta b{ font-weight:700; }
+
+    table.ps-table{
+      width:100%;border-collapse:collapse;table-layout:fixed;
+      font-size:9px;margin-bottom:5px;
+    }
+    table.ps-table td, table.ps-table th{
+      border:0.75px solid #000;padding:2.2px 5px;vertical-align:middle;
+      overflow:hidden;
+    }
+    table.ps-table th{ font-size:9px; }
+    tr.ps-head th{ background:#3a3a3a;color:#fff;font-weight:700;text-align:center; }
+    tr.ps-group td{ background:#dde6ef;font-weight:700;font-style:italic; }
+    td.ps-sub{ padding-left:16px; }
+    td.ps-val{ text-align:center;font-variant-numeric:tabular-nums; }
+    td.ps-tot{ background:#dde6ef;text-align:center;font-weight:700;font-variant-numeric:tabular-nums; }
+    .ps-subhead{ text-align:center;font-weight:700;font-size:8.5px; }
+    tr.ps-grand td{ background:#dde6ef;font-weight:700; }
+    tr.ps-grand td:first-child{ text-align:right;padding-right:8px; }
+
+    .ps-goals{ display:flex;gap:9px;margin-bottom:5px;font-size:8.8px; }
+    .ps-goals-box{ flex:2;border:0.75px solid #000;padding:3.5px 6px;min-height:20px; }
+    .ps-scale{ flex:1;border:0.75px solid #000;padding:3.5px 6px;background:#dde6ef; }
+    .ps-scale b{ font-size:11px; }
+
+    table.ps-crit td, table.ps-crit th{ font-size:8.3px;padding:2px 5px; }
+    table.ps-crit td.ps-val{ font-weight:700; }
+    table.ps-crit td.ps-chk{ text-align:center;font-weight:700; }
+    .ps-num{ display:inline-block;width:1.2em;text-align:center; }
+    .ps-num.ps-circ{ border:1px solid #000;border-radius:50%; }
+
+    .ps-mastery{
+      display:flex;justify-content:space-between;align-items:center;
+      border:0.75px solid #000;background:#3a3a3a;color:#fff;
+      padding:3.5px 9px;font-size:10.5px;font-weight:700;margin-bottom:4px;
+    }
+    .ps-mastery #ps-mastery-pill{
+      background:#fff;color:#000;padding:1px 9px;border-radius:3px;
+    }
+
+    .ps-cite{ font-size:7.5px;color:#333;margin-top:3.5px; }
   }
 </style>
 
@@ -655,7 +728,7 @@
 
 </div>
 
-  <section class="section" data-accent="ho">
+  <section class="section" data-accent="ho" id="onscreen-criteria">
     <div class="section-head">
       <h2>基準判定（自動計算）</h2>
     </div>
@@ -689,6 +762,87 @@
   </section>
 
 </main>
+
+<div class="print-sheet" id="print-sheet">
+  <h1 class="ps-title">CDIコーチングの観察的アセスメント（COACH）</h1>
+  <div class="ps-meta">
+    <span>日付: <b id="ps-date">—</b></span>
+    <span>PCITセッション: <b id="ps-session">—</b></span>
+    <span>トレーニー: <b id="ps-trainee">—</b></span>
+    <span>評定者: <b id="ps-rater">—</b></span>
+  </div>
+
+  <table class="ps-table">
+    <colgroup><col style="width:34%"><col style="width:14%"><col style="width:14%"><col style="width:19%"><col style="width:19%"></colgroup>
+    <tbody>
+      <tr class="ps-head"><th>肯定的コーチング発言</th><th colspan="2">チェック</th><th colspan="2">合計</th></tr>
+
+      <tr><td>高次発言（HO）</td><td class="ps-val" colspan="2" id="ps-ho"></td><td class="ps-tot" colspan="2" id="ps-ho-tot"></td></tr>
+
+      <tr class="ps-group"><td colspan="5">説明（描写）：</td></tr>
+      <tr><td class="ps-sub">子ども（DCh）</td><td class="ps-val" colspan="2" id="ps-dch"></td><td class="ps-tot" colspan="2" rowspan="3" id="ps-desc-tot"></td></tr>
+      <tr><td class="ps-sub">親（DP）</td><td class="ps-val" colspan="2" id="ps-dp"></td></tr>
+      <tr><td class="ps-sub">スキル/おもちゃ/状況（DS）</td><td class="ps-val" colspan="2" id="ps-ds"></td></tr>
+
+      <tr class="ps-group"><td>親に対する具体的賞賛（LP）：</td><td class="ps-subhead">自発的CDIへの賞賛</td><td class="ps-subhead">随伴的賞賛</td><td colspan="2"></td></tr>
+      <tr><td class="ps-sub">LP</td><td class="ps-val" id="ps-lp-sp"></td><td class="ps-val" id="ps-lp-co"></td><td class="ps-tot" rowspan="4" id="ps-lp-tot"></td><td class="ps-tot" rowspan="4" id="ps-lpup-tot"></td></tr>
+      <tr><td class="ps-sub">BD</td><td class="ps-val" id="ps-bd-sp"></td><td class="ps-val" id="ps-bd-co"></td></tr>
+      <tr><td class="ps-sub">RF</td><td class="ps-val" id="ps-rf-sp"></td><td class="ps-val" id="ps-rf-co"></td></tr>
+      <tr><td class="ps-sub">その他</td><td class="ps-val" id="ps-o-sp"></td><td class="ps-val" id="ps-o-co"></td></tr>
+
+      <tr><td>一般的賞賛（CUPを含む）（UP）</td><td class="ps-val" id="ps-up"></td><td class="ps-val" id="ps-cup"></td><td class="ps-tot"></td><td class="ps-tot" id="ps-up-tot"></td></tr>
+
+      <tr><td>PRIDEスキルのプロンプティング（PS）</td><td class="ps-val" colspan="2" id="ps-ps"></td><td colspan="2"></td></tr>
+      <tr><td>ラインフィード（LF）</td><td class="ps-val" colspan="2" id="ps-lf"></td><td colspan="2"></td></tr>
+      <tr><td>建設的フィードバック（CF）</td><td class="ps-val" colspan="2" id="ps-cf"></td><td colspan="2"></td></tr>
+
+      <tr class="ps-group"><td colspan="5">命令：</td></tr>
+      <tr><td class="ps-sub">直接的命令（DC）</td><td class="ps-val" colspan="2" id="ps-dc"></td><td colspan="2"></td></tr>
+      <tr><td class="ps-sub">間接的命令（IC）</td><td class="ps-val" colspan="2" id="ps-ic"></td><td colspan="2"></td></tr>
+
+      <tr class="ps-grand"><td colspan="3">コーチング発言の合計：</td><td class="ps-tot" colspan="2" id="ps-grand"></td></tr>
+    </tbody>
+  </table>
+
+  <table class="ps-table">
+    <colgroup><col style="width:34%"><col style="width:14%"><col style="width:14%"><col style="width:19%"><col style="width:19%"></colgroup>
+    <tbody>
+      <tr class="ps-head"><th>避ける</th><th colspan="2">チェック</th><th colspan="2">合計</th></tr>
+
+      <tr class="ps-group"><td colspan="5">コーチングエラー（CE）：</td></tr>
+      <tr><td class="ps-sub">親のPRIDEスキルのミスラベル</td><td class="ps-val" colspan="2" id="ps-ce1"></td><td class="ps-tot" colspan="2" rowspan="3" id="ps-ce-tot"></td></tr>
+      <tr><td class="ps-sub">不適切な提案</td><td class="ps-val" colspan="2" id="ps-ce2"></td></tr>
+      <tr><td class="ps-sub">批判あるいは的外れな指摘</td><td class="ps-val" colspan="2" id="ps-ce3"></td></tr>
+
+      <tr class="ps-group"><td colspan="5">機会を落とす（MO）：</td></tr>
+      <tr><td class="ps-sub">自発的LP, BD, RFに続く賞賛を落とす</td><td class="ps-val" colspan="2" id="ps-mo-s"></td><td colspan="2"></td></tr>
+      <tr><td class="ps-sub">PS, LFに続く随伴的賞賛を落とす</td><td class="ps-val" colspan="2" id="ps-mo-c"></td><td colspan="2"></td></tr>
+    </tbody>
+  </table>
+
+  <div class="ps-goals">
+    <div class="ps-goals-box">セラピストのコーチングゴールのリスト(s):</div>
+    <div class="ps-scale">コーチングゴールに対するアドヒアランススコア：<b id="ps-goal">—</b>（1低〜4高）</div>
+    <div class="ps-scale">コーチの熱心さ／マッチングスコア：<b id="ps-enthu">—</b>（1低〜4高）</div>
+  </div>
+
+  <table class="ps-table ps-crit">
+    <colgroup><col style="width:38%"><col style="width:15%"><col style="width:12%"><col style="width:12%"><col style="width:11%"><col style="width:12%"></colgroup>
+    <thead>
+      <tr class="ps-head">
+        <th>基準</th><th>スコア</th><th>適合</th><th>不適合</th><th>スコア</th><th>様式的特徴（適合していたら数字を○で囲む）</th>
+      </tr>
+    </thead>
+    <tbody id="ps-crit-rows"></tbody>
+  </table>
+
+  <div class="ps-mastery">
+    <span>CDIコーチングマスタリーに適合する</span>
+    <b id="ps-mastery-pill">—</b>
+  </div>
+
+  <p class="ps-cite">原版「CDIコーチングの観察的アセスメント（COACH）」翻訳：加茂登志子（Ver.1.0, 2017年3月）をもとに作成</p>
+</div>
 
 <footer class="foot">記録はこの端末のブラウザにのみ保存されます（他の端末やユーザーとは共有されません）。「PDFに出力」は印刷画面を開きます。パソコン・Androidでは送信先（プリンター）を「PDFに保存」にして保存してください。iPhone/iPadではプレビュー画像をピンチして全体表示にし、共有ボタンから「ファイルに保存」を選ぶとPDFになります。</footer>
 
@@ -940,6 +1094,68 @@
     var pill = document.getElementById("mastery-pill");
     pill.textContent = mastery ? "適合" : "不適合";
     pill.className = "pill " + (mastery ? "pass" : "fail");
+
+    // ---- printed-sheet mirror (paper-form replica, @media print only) ----
+    setText("ps-ho", ho);
+    setText("ps-ho-tot", "合計HO: " + ho);
+    setText("ps-dch", g("DCh"));
+    setText("ps-dp", g("DP"));
+    setText("ps-ds", g("DS"));
+    setText("ps-desc-tot", "説明の合計: " + descTotal);
+    setText("ps-lp-sp", g("LP_LP"));
+    setText("ps-lp-co", g("CLP_LP"));
+    setText("ps-bd-sp", g("LP_BD"));
+    setText("ps-bd-co", g("CLP_BD"));
+    setText("ps-rf-sp", g("LP_RF"));
+    setText("ps-rf-co", g("CLP_RF"));
+    setText("ps-o-sp", g("LP_O"));
+    setText("ps-o-co", g("CLP_O"));
+    setText("ps-lp-tot", "合計LP: " + lpTotal);
+    setText("ps-lpup-tot", "合計LP+UP: " + lpUpTotal);
+    setText("ps-up", g("UP"));
+    setText("ps-cup", g("CUP"));
+    setText("ps-up-tot", "合計UP: " + upTotal);
+    setText("ps-ps", g("PS"));
+    setText("ps-lf", g("LF"));
+    setText("ps-cf", g("CF"));
+    setText("ps-dc", g("DC"));
+    setText("ps-ic", g("IC"));
+    setText("ps-grand", "合計: " + grandTotal);
+    setText("ps-ce1", g("CE1"));
+    setText("ps-ce2", g("CE2"));
+    setText("ps-ce3", g("CE3"));
+    setText("ps-ce-tot", "合計CE: " + ceTotal);
+    setText("ps-mo-s", moSpont);
+    setText("ps-mo-c", moCont);
+
+    var pMastery = document.getElementById("ps-mastery-pill");
+    if(pMastery){
+      pMastery.textContent = mastery ? "適合" : "不適合";
+    }
+
+    var critRowsBody = document.getElementById("ps-crit-rows");
+    if(critRowsBody){
+      critRowsBody.innerHTML = "";
+      var maxRows = Math.max(mainDefs.length, styleDefs.length);
+      for(var i = 0; i < maxRows; i++){
+        var md = mainDefs[i], sd = styleDefs[i];
+        var tr2 = document.createElement("tr");
+        tr2.innerHTML =
+          "<td>" + (md ? md.label : "") + "</td>" +
+          "<td class=\"ps-val\">" + (md ? md.show : "") + "</td>" +
+          "<td class=\"ps-chk\">" + (md && md.ok ? "○" : "") + "</td>" +
+          "<td class=\"ps-chk\">" + (md && !md.ok ? "○" : "") + "</td>" +
+          "<td class=\"ps-val\">" + (sd ? sd.show : "") + "</td>" +
+          "<td>" + (sd ? styleLabelHTML(sd.label, sd.ok) : "") + "</td>";
+        critRowsBody.appendChild(tr2);
+      }
+    }
+  }
+
+  function styleLabelHTML(label, ok){
+    var m = /^(\d+)\.\s*(.*)$/.exec(label);
+    if(!m) return label;
+    return '<span class="ps-num' + (ok ? ' ps-circ' : '') + '">' + m[1] + '</span>. ' + m[2];
   }
 
   function critRow(label, show, ok){
@@ -1156,9 +1372,31 @@
       localStorage.setItem(META_KEY, JSON.stringify(out));
     }catch(e){ /* ignore */ }
   }
+
+  // mirrors the header's date/session/trainee/rater + scale fields into the
+  // printed paper-form replica (print-sheet is invisible on screen, so this
+  // only matters once window.print() runs)
+  function formatDateVal(v){
+    if(!v) return "";
+    var parts = v.split("-");
+    return parts.length === 3 ? (parts[0] + "/" + parts[1] + "/" + parts[2]) : v;
+  }
+  function renderPrintMeta(){
+    var dateVal = formatDateVal(document.getElementById("m-date").value);
+    setText("ps-date", dateVal || "—");
+    var phase = document.getElementById("m-session-phase").value;
+    var num = document.getElementById("m-session-num").value;
+    setText("ps-session", num ? (phase + "（" + num + "）") : phase);
+    setText("ps-trainee", document.getElementById("m-trainee").value || "—");
+    setText("ps-rater", document.getElementById("m-rater").value || "—");
+    setText("ps-goal", document.getElementById("s-goal").value || "—");
+    setText("ps-enthu", document.getElementById("s-enthu").value || "—");
+  }
+  renderPrintMeta();
+
   metaIds.forEach(function(id){
     var el = document.getElementById(id);
-    if(el) el.addEventListener("change", saveMeta);
+    if(el) el.addEventListener("change", function(){ saveMeta(); renderPrintMeta(); });
   });
 
   recompute();
