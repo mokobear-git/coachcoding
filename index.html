@@ -113,6 +113,41 @@
   .title-row .sub{
     color:var(--muted);font-size:11px;
   }
+
+  /* ---------- Timer ---------- */
+  .timer{
+    display:flex;align-items:center;gap:6px;
+    margin-left:auto;align-self:center;
+  }
+  .timer-display{
+    font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:18px;
+    font-variant-numeric:tabular-nums;letter-spacing:.02em;
+    padding:3px 9px;border-radius:6px;
+    background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
+    min-width:3.2em;text-align:center;
+  }
+  .timer-display.running{border-color:var(--accent);color:var(--accent);}
+  .timer-display.done{
+    background:var(--bad-soft);border-color:var(--bad);color:var(--bad);
+    animation:timer-pulse 1s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .timer-display.done{animation:none;}
+  }
+  @keyframes timer-pulse{
+    0%, 100%{ opacity:1; }
+    50%{ opacity:.55; }
+  }
+  .timer-btn{
+    font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;
+    padding:5px 11px;border-radius:6px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink);
+  }
+  .timer-btn:hover{background:var(--line);}
+  .timer-btn.primary{
+    background:var(--accent);border-color:var(--accent);color:var(--accent-ink);
+  }
+  .timer-btn.primary:hover{filter:brightness(1.08);}
   .meta-row{
     display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
     padding-bottom:8px;
@@ -159,6 +194,7 @@
     display:flex;align-items:flex-start;gap:8px;
     font-size:10.5px;line-height:1.4;
   }
+  .ios-hint[hidden]{ display:none; }
   .ios-hint button{
     flex:0 0 auto;background:transparent;border:0;color:inherit;
     font-size:14px;line-height:1;cursor:pointer;padding:0 2px;opacity:.85;
@@ -339,6 +375,10 @@
 
   /* ---------- Phone: same layout, larger touch targets ---------- */
   @media (max-width:560px){
+    .timer{ width:100%; margin-left:0; }
+    .timer-display{ font-size:20px; padding:5px 11px; }
+    .timer-btn{ font-size:13px; padding:7px 13px; }
+
     .meta-row{ grid-template-columns:repeat(2,1fr); gap:8px; }
     .meta-field label{ font-size:11px; }
     .meta-field input, .meta-field select{ font-size:14px; padding:7px 8px; }
@@ -410,6 +450,7 @@
     .summary-item .lbl{ font-size:8.5px; }
     .reset-btn, .print-btn{ display:none; }
     .ios-hint{ display:none; }
+    .timer{ display:none; }
 
     /* section chrome */
     main{ padding-top:6.5px; gap:6.5px; }
@@ -460,6 +501,11 @@
     <div class="title-row">
       <h1>COACHコーディング</h1>
       <span class="sub">CDIコーチングの観察的アセスメント — 集計用ワークシート</span>
+      <div class="timer" id="timer">
+        <span class="timer-display" id="timer-display">05:00</span>
+        <button class="timer-btn primary" id="timer-start" type="button">開始</button>
+        <button class="timer-btn" id="timer-reset" type="button">リセット</button>
+      </div>
     </div>
     <div class="meta-row">
       <div class="meta-field"><label for="m-date">日付</label><input id="m-date" type="date"></div>
@@ -973,6 +1019,118 @@
   if(iosHintClose){
     iosHintClose.addEventListener("click", function(){ iosHint.hidden = true; });
   }
+
+  // 5-minute coding-interval timer. Counts down from an absolute end time
+  // (not a tick counter) so it stays correct if the tab is backgrounded or
+  // throttled; a short beep marks the end, using an AudioContext created on
+  // the user's own tap so mobile browsers don't block the sound.
+  (function(){
+    var DURATION = 5 * 60;
+    var display = document.getElementById("timer-display");
+    var startBtn = document.getElementById("timer-start");
+    var resetBtn = document.getElementById("timer-reset");
+    if(!display || !startBtn || !resetBtn) return;
+
+    var remaining = DURATION;
+    var endAt = null;      // Date.now() + remaining*1000, while running
+    var tickId = null;
+    var audioCtx = null;
+
+    function render(){
+      var s = Math.max(0, Math.ceil(remaining));
+      var mm = Math.floor(s / 60);
+      var ss = s % 60;
+      display.textContent = mm + ":" + (ss < 10 ? "0" : "") + ss;
+    }
+
+    function beep(){
+      try{
+        if(!audioCtx) return;
+        var now = audioCtx.currentTime;
+        [0, 0.35, 0.7].forEach(function(offset){
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.0001, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.25, now + offset + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.28);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.3);
+        });
+      }catch(e){ /* audio not available — the visual pulse still shows */ }
+    }
+
+    function stopTick(){
+      if(tickId){ clearInterval(tickId); tickId = null; }
+    }
+
+    function finish(){
+      stopTick();
+      remaining = 0;
+      endAt = null;
+      render();
+      display.classList.remove("running");
+      display.classList.add("done");
+      startBtn.textContent = "開始";
+      beep();
+    }
+
+    function tick(){
+      if(endAt == null) return;
+      var msLeft = endAt - Date.now();
+      if(msLeft <= 0){ finish(); return; }
+      remaining = msLeft / 1000;
+      render();
+    }
+
+    function start(){
+      if(remaining <= 0){ remaining = DURATION; }
+      display.classList.remove("done");
+      display.classList.add("running");
+      if(!audioCtx){
+        try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch(e){ audioCtx = null; }
+      }
+      if(audioCtx && audioCtx.state === "suspended"){ audioCtx.resume(); }
+      endAt = Date.now() + remaining * 1000;
+      startBtn.textContent = "一時停止";
+      stopTick();
+      tickId = setInterval(tick, 250);
+      tick();
+    }
+
+    function pause(){
+      if(endAt != null){ remaining = Math.max(0, (endAt - Date.now()) / 1000); }
+      stopTick();
+      endAt = null;
+      display.classList.remove("running");
+      startBtn.textContent = "再開";
+      render();
+    }
+
+    function reset(){
+      stopTick();
+      endAt = null;
+      remaining = DURATION;
+      display.classList.remove("running", "done");
+      startBtn.textContent = "開始";
+      render();
+    }
+
+    startBtn.addEventListener("click", function(){
+      if(endAt != null){ pause(); } else { start(); }
+    });
+    resetBtn.addEventListener("click", reset);
+
+    document.addEventListener("visibilitychange", function(){
+      if(document.visibilityState === "visible" && endAt != null){ tick(); }
+    });
+
+    render();
+  })();
 
   // meta fields (session info) persisted alongside counts, per-browser only
   var META_KEY = "coach-coding-meta-v1";
